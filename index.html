@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名人語錄</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e12;
+  --bg2:#15151c;
+  --bg3:#1c1c26;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.14);
+  --text:#e8e6f0;
+  --text2:#9994b0;
+  --text3:#5a5670;
+  --purple:#9b87f5;
+  --purple-dim:rgba(155,135,245,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Noto Serif TC',serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  padding:32px 20px;
+  position:relative;
+  overflow-x:hidden;
+}
+
+/* ambient texture */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size:28px 28px;
+  pointer-events:none;
+}
+
+/* corner index numbers */
+.index-corner{
+  position:fixed;
+  font-family:'Space Mono',monospace;
+  font-size:11px;
+  letter-spacing:0.15em;
+  color:var(--text3);
+  text-transform:uppercase;
+}
+.index-corner.top-left{top:24px;left:24px;}
+.index-corner.bottom-right{bottom:24px;right:24px;text-align:right;}
+
+.archive-label{
+  font-family:'Space Mono',monospace;
+  font-size:11px;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--purple);
+  margin-bottom:40px;
+}
+
+/* MAIN CARD */
+.quote-wrap{
+  max-width:640px;
+  width:100%;
+  text-align:center;
+  animation:fadeIn 0.5s ease;
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.quote-wrap.fade-out{
+  animation:fadeOutAnim 0.18s ease forwards;
+}
+@keyframes fadeOutAnim{
+  from{opacity:1;transform:translateY(0);}
+  to{opacity:0;transform:translateY(-6px);}
+}
+
+.quote-mark{
+  font-family:'Noto Serif TC',serif;
+  font-size:64px;
+  color:var(--purple);
+  opacity:0.35;
+  line-height:1;
+  margin-bottom:8px;
+}
+
+.quote-text{
+  font-size:28px;
+  font-weight:500;
+  line-height:1.7;
+  color:var(--text);
+  margin-bottom:36px;
+  letter-spacing:0.02em;
+}
+
+.quote-meta{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.quote-divider{
+  width:32px;
+  height:1px;
+  background:var(--border2);
+  margin-bottom:14px;
+}
+.quote-author{
+  font-family:'Noto Serif TC',serif;
+  font-size:16px;
+  font-weight:700;
+  color:var(--purple);
+  letter-spacing:0.05em;
+}
+.quote-desc{
+  font-family:'Noto Sans TC','Noto Serif TC',sans-serif;
+  font-size:12px;
+  color:var(--text3);
+  line-height:1.7;
+  max-width:380px;
+  margin-top:4px;
+}
+
+/* REFRESH BUTTON */
+.refresh-btn{
+  position:fixed;
+  bottom:28px;
+  right:28px;
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  color:var(--purple);
+  font-size:20px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s;
+  z-index:10;
+}
+.refresh-btn:hover{
+  border-color:var(--purple);
+  background:var(--purple-dim);
+  transform:rotate(180deg);
+}
+.refresh-btn:active{
+  transform:rotate(180deg) scale(0.92);
+}
+.refresh-btn.spinning{
+  animation:spin 0.4s ease;
+}
+@keyframes spin{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(180deg);}
+}
+
+@media(max-width:600px){
+  .quote-text{font-size:21px;}
+  .quote-mark{font-size:48px;}
+  .index-corner{font-size:10px;}
+  .quote-desc{font-size:11px;}
+  .refresh-btn{width:48px;height:48px;font-size:18px;bottom:20px;right:20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="index-corner top-left">QUOTE ARCHIVE</div>
+<div class="index-corner bottom-right" id="index-display">NO. — / 350</div>
+
+<div class="archive-label">東西方哲人語錄</div>
+
+<div class="quote-wrap" id="quote-wrap">
+  <div class="quote-mark">"</div>
+  <div class="quote-text" id="quote-text">—</div>
+  <div class="quote-meta">
+    <div class="quote-divider"></div>
+    <div class="quote-author" id="quote-author">—</div>
+    <div class="quote-desc" id="quote-desc">—</div>
+  </div>
+</div>
+
+<button class="refresh-btn" id="refresh-btn" onclick="nextQuote()" title="換一句">↻</button>
+
+<script src="quotes_data.js"></script>
+<script>
+var currentIndex = -1;
+
+function showQuote(idx){
+  var item = QUOTES[idx];
+  document.getElementById('quote-text').textContent = item.q;
+  document.getElementById('quote-author').textContent = item.a;
+  document.getElementById('quote-desc').textContent = item.d;
+  document.getElementById('index-display').textContent = 'NO. ' + String(idx+1).padStart(3,'0') + ' / ' + QUOTES.length;
+}
+
+function nextQuote(){
+  var btn = document.getElementById('refresh-btn');
+  var wrap = document.getElementById('quote-wrap');
+
+  btn.classList.remove('spinning');
+  void btn.offsetWidth; // restart animation
+  btn.classList.add('spinning');
+
+  wrap.classList.add('fade-out');
+
+  setTimeout(function(){
+    var newIndex;
+    do{
+      newIndex = Math.floor(Math.random() * QUOTES.length);
+    }while(newIndex === currentIndex && QUOTES.length > 1);
+    currentIndex = newIndex;
+    showQuote(currentIndex);
+    wrap.classList.remove('fade-out');
+  }, 180);
+}
+
+// init with random quote
+currentIndex = Math.floor(Math.random() * QUOTES.length);
+showQuote(currentIndex);
+</script>
+</body>
+</html>
